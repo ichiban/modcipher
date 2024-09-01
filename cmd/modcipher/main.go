@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -33,7 +34,7 @@ func main() {
 			conn, err := dialer.DialContext(ctx, network, addr)
 			return &modcipher.Conn{Conn: conn, Preferences: preferences}, err
 		},
-		ForceAttemptHTTP2:     true,
+		//ForceAttemptHTTP2:     true,
 		MaxIdleConns:          100,
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
@@ -79,10 +80,18 @@ func (p preferences) String() string {
 }
 
 func (p preferences) Set(s string) error {
-	i, err := strconv.ParseInt(s, 16, 32)
+	kv := strings.SplitN(s, "=", 2)
+	k, err := strconv.ParseInt(kv[0], 16, 32)
 	if err != nil {
 		return err
 	}
-	p[modcipher.CipherSuite(i)] = 1
+	v := 1
+	if len(kv) == 2 {
+		v, err = strconv.Atoi(kv[1])
+		if err != nil {
+			return err
+		}
+	}
+	p[modcipher.CipherSuite(k)] = v
 	return nil
 }
